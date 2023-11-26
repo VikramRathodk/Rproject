@@ -1,0 +1,181 @@
+# import pandas as pd
+# from sklearn.model_selection import train_test_split
+# from sklearn.preprocessing import StandardScaler
+# from sklearn.impute import SimpleImputer
+# from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+# from tensorflow.keras.models import Sequential
+# from tensorflow.keras.layers import Dense
+# from tensorflow.keras.callbacks import EarlyStopping
+
+# def build_model(input_shape):
+#     model = Sequential([
+#         Dense(64, activation='relu', input_shape=input_shape),
+#         Dense(32, activation='relu'),
+#         Dense(1, activation='sigmoid')
+#     ])
+#     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+#     return model
+
+# def train_and_evaluate_model(X_train, X_test, y_train, y_test):
+#     scaler = StandardScaler()
+#     X_train_scaled = scaler.fit_transform(X_train)
+#     X_test_scaled = scaler.transform(X_test)
+    
+#     model = build_model(input_shape=(X_train_scaled.shape[1],))
+    
+#     early_stopping = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+    
+#     model.fit(X_train_scaled, y_train, epochs=50, batch_size=32, validation_data=(X_test_scaled, y_test), callbacks=[early_stopping], verbose=0)
+    
+#     y_pred = model.predict(X_test_scaled)
+#     y_pred_binary = (y_pred > 0.5).astype('int32')
+    
+#     accuracy = accuracy_score(y_test, y_pred_binary)
+#     precision = precision_score(y_test, y_pred_binary)
+#     recall = recall_score(y_test, y_pred_binary)
+#     f1 = f1_score(y_test, y_pred_binary)
+    
+#     return accuracy, precision, recall, f1
+
+# # Load the dataset
+# data = pd.read_csv('articles_data.csv')
+
+# # Handling missing values
+# data.dropna(inplace=True)  # Drop rows with NaN values, or you can use imputation techniques
+
+# # Preprocessing
+# features = data[['engagement_reaction_count', 'engagement_comment_count', 'engagement_share_count', 'engagement_comment_plugin_count']]
+# target = data['top_article']
+# X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
+
+# # Train and evaluate the model
+# accuracy, precision, recall, f1 = train_and_evaluate_model(X_train, X_test, y_train, y_test)
+
+# print(f"Test Accuracy: {accuracy}")
+# print(f"Precision: {precision}")
+# print(f"Recall: {recall}")
+# print(f"F1-Score: {f1}")
+
+
+
+# -------------------------------------------------
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from kerastuner.tuners import RandomSearch
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+from sklearn.metrics import roc_curve, precision_recall_curve
+
+
+
+# Load the dataset
+data = pd.read_csv('articles_data.csv')
+
+# Handling missing values
+data.dropna(inplace=True)
+
+# Preprocessing
+features = data[['engagement_reaction_count', 'engagement_comment_count', 'engagement_share_count', 'engagement_comment_plugin_count']]
+target = data['top_article']
+X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
+
+# Scale the features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+def build_model(hp):
+    model = Sequential()
+    model.add(Dense(units=hp.Int('units_input', min_value=32, max_value=256, step=32),
+                    activation='relu', input_shape=(X_train_scaled.shape[1],)))
+    model.add(Dropout(rate=hp.Float('dropout_input', min_value=0.1, max_value=0.5, step=0.1)))
+    
+    for i in range(hp.Int('num_layers', 1, 4)):
+        model.add(Dense(units=hp.Int(f'units_{i}', min_value=32, max_value=256, step=32),
+                        activation='relu'))
+        model.add(Dropout(rate=hp.Float(f'dropout_{i}', min_value=0.1, max_value=0.5, step=0.1)))
+    
+    model.add(Dense(1, activation='sigmoid'))
+
+    model.compile(optimizer='adam',
+                  loss='binary_crossentropy',
+                  metrics=['accuracy'])
+    
+    return model
+
+tuner = RandomSearch(
+    build_model,
+    objective='val_accuracy',
+    max_trials=10,
+    executions_per_trial=1,
+    directory='my_dir',
+    project_name='neural_network_tuning')
+
+tuner.search(X_train_scaled, y_train,
+             epochs=50,
+             validation_data=(X_test_scaled, y_test))
+
+best_model = tuner.get_best_models(num_models=1)[0]
+
+# Save the best model to a file
+best_model.save('best_model.h5')
+
+# Train the best model
+best_model.fit(X_train_scaled, y_train, epochs=50, batch_size=32, validation_data=(X_test_scaled, y_test), verbose=0)
+
+# Predict on the test set
+y_pred = best_model.predict(X_test_scaled)
+y_pred_binary = (y_pred > 0.5).astype('int32')
+
+# Calculate evaluation metrics
+accuracy = accuracy_score(y_test, y_pred_binary)
+precision = precision_score(y_test, y_pred_binary)
+recall = recall_score(y_test, y_pred_binary)
+f1 = f1_score(y_test, y_pred_binary)
+
+print(f"Test Accuracy: {accuracy}")
+print(f"Precision: {precision}")
+print(f"Recall: {recall}")
+print(f"F1-Score: {f1}")
+
+history = best_model.fit(X_train_scaled, y_train, epochs=50, batch_size=32, validation_data=(X_test_scaled, y_test), verbose=0)
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+cm = confusion_matrix(y_test, y_pred_binary)
+plt.figure(figsize=(6, 4))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Confusion Matrix')
+plt.show()
+
+fpr, tpr, thresholds = roc_curve(y_test, y_pred)
+precision, recall, _ = precision_recall_curve(y_test, y_pred)
+
+plt.figure(figsize=(10, 4))
+plt.subplot(1, 2, 1)
+plt.plot(fpr, tpr)
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve')
+
+plt.subplot(1, 2, 2)
+plt.plot(recall, precision)
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.title('Precision-Recall Curve')
+plt.tight_layout()
+plt.show()  
+
+
+

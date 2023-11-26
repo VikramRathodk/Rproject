@@ -1,0 +1,44 @@
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.models import load_model
+
+# Define the number of rows for the dummy data
+num_rows = 1000
+
+# Generate synthetic data similar to the original dataset structure
+dummy_data = {
+    'engagement_reaction_count': np.random.randint(1, 100, num_rows),
+    'engagement_comment_count': np.random.randint(1, 50, num_rows),
+    'engagement_share_count': np.random.randint(1, 20, num_rows),
+    'engagement_comment_plugin_count': np.random.randint(1, 10, num_rows)
+}
+
+# Create a DataFrame from the synthetic data
+dummy_df = pd.DataFrame(dummy_data)
+
+# Scale the features using the previously used scaler
+scaler = StandardScaler()  # Use the same scaler object as used during training
+# Assume 'scaler' has been fit on the original data used for training
+# Apply the same scaler to the dummy data for consistency
+# For demonstration, let's scale the dummy data here
+dummy_scaled = scaler.fit_transform(dummy_df)
+
+# Replace 'best_model.h5' with the correct file path of your saved best model
+model_file_path = 'best_model.h5'
+
+# Load the saved best model from the file
+best_model = load_model(model_file_path)
+
+# Predict using the loaded model
+dummy_predictions = best_model.predict(dummy_scaled)
+dummy_predictions_binary = (dummy_predictions > 0.5).astype('int32')
+
+# Add the predicted probabilities to the dummy_df DataFrame
+dummy_df['predicted_probability'] = dummy_predictions.flatten()
+
+# Rank the news articles based on predicted probabilities
+ranked_articles = dummy_df.sort_values(by='predicted_probability', ascending=False)
+
+# Display the ranked articles
+print(ranked_articles.head())
