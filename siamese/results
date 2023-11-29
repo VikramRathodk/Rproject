@@ -4,3 +4,36 @@ Test Accuracy: 0.8874700718276137
 Precision: 0.9
 Recall: 0.06040268456375839
 F1-Score: 0.11320754716981132
+
+
+
+
+
+import pandas as pd
+import matplotlib.pyplot as plt
+from algorithms import weighted_popularity_ranking, tfidf_ranking
+
+# Read the dataset
+df = pd.read_csv('../data/articles_data.csv')
+
+# Perform weighted popularity ranking
+top_articles_weighted = weighted_popularity_ranking(df)
+
+# Perform TF-IDF ranking
+top_articles_tfidf = tfidf_ranking(df)
+
+# Display or further process the top articles ranked by weighted popularity score
+print("Top Articles by Weighted Popularity:")
+print(top_articles_weighted)
+
+print("\nTop Articles by TF-IDF Ranking:")
+print(top_articles_tfidf)
+
+# Example: Create a bar plot to visualize top articles by weighted popularity
+plt.figure(figsize=(10, 6))
+plt.barh(top_articles_weighted['title'], top_articles_weighted['weighted_popularity_score'], color='skyblue')
+plt.xlabel('Weighted Popularity Score')
+plt.title('Top 10 Articles by Weighted Popularity')
+plt.gca().invert_yaxis()
+plt.tight_layout()
+plt.show()

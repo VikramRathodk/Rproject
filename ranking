@@ -1,0 +1,19 @@
+import pandas as pd
+
+# Read the dataset into a Pandas DataFrame
+df = pd.read_csv('articles_data.csv')
+
+# Display the first few rows of the dataset to understand its structure
+print(df.head())
+
+# Calculate a popularity score by summing up the engagement counts
+engagement_columns = ['engagement_reaction_count', 'engagement_comment_count', 'engagement_share_count']
+df['popularity_score'] = df[engagement_columns].sum(axis=1)
+
+# Sort articles by popularity score in descending order
+df_sorted_by_popularity = df.sort_values(by='popularity_score', ascending=False)
+
+# Display the top articles ranked by popularity
+top_articles = df_sorted_by_popularity[['title', 'popularity_score']].head(10)
+print("Top 10 articles ranked by popularity:")
+print(top_articles)
