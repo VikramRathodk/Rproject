@@ -1,0 +1,54 @@
+
+//Camparing the 3 algorithms 
+
+1.weighted_popularity_ranking
+2.F-IDF
+3.LSTM -Neural Network
+
+Results:
+
+For linear Regression(weighted_popularity_ranking):(Mention only Accuracy)
+//Mean Squared Error: 0.018662634093862682
+//Root Mean Squared Error: 0.1366112517103283
+//Mean Absolute Error: 0.052526555461970215
+R-squared (Coefficient of Determination): 0.9
+
+//Ranking Performance
+
+weighted_popularity_ranking vs TF-IDF 
+    - Kendall's Tau: 0.5111111111111111, 
+    - Spearman's Rank Correlation: 0.6727272727272726
+TF-IDF vs LSTM -Neural Network 
+    - Kendall's Tau: 0.3333333333333333, 
+    - Spearman's Rank Correlation: 0.41818181818181815
+
+Mean Average Precision (MAP) across rankings: 0.5338163463925033
+
+
+Flow:-
+1.3 algorithms are used for Ranking 
+ 1.weighted_popularity_ranking:
+        weighted_popularity_ranking that aims to rank news articles based on a calculated "weighted popularity score" using engagement metrics like reaction count, comment count, and share count.
+2.TF-IDF
+performs a different method of ranking articles based on their titles using TF-IDF (Term Frequency-Inverse Document Frequency) scoring.
+
+shows the article titles alongside their corresponding TF-IDF scores, providing a ranking of articles based on the uniqueness and importance of words in their titles according to the TF-IDF algorithm.
+3.neural network model(LSTM)
+
+appears to create a neural network-based ranking system for articles based on their engagement features, utilizing an LSTM (Long Short-Term Memory) neural network model
+
+
+nutshell:
+Ranking Generation:
+
+Three ranking algorithms are applied to the dataset (df): weighted_popularity_ranking, tfidf_ranking, and neural_network_ranking. These algorithms generate ranked lists of articles based on different criteria like weighted popularity, TF-IDF score, and neural network score.
+Comparison of Rankings:
+
+Extracts top-ranked articles from each algorithm to compare their rankings.
+Calculates Kendall's Tau and Spearman's Rank Correlation between pairs of ranked lists to assess the degree of similarity or correlation between rankings:
+For instance, comparing the rankings between Weighted and TF-IDF, and between TF-IDF and Neural Network.
+Mean Average Precision (MAP) Calculation:
+
+Simulates relevance scores for the top-K items across different rankings (in this case, considering the top 10 articles).
+Calculates Average Precision (AP) for each ranking method.
+Computes the Mean Average Precision (MAP) across all rankings. MAP provides a single metric to compare the overall performance of different ranking algorithms.
